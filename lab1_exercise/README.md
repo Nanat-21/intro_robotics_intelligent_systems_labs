@@ -1,80 +1,138 @@
-# Lab 1 – Robotics Exercise
+# Lab 1 – Introduction to Robotics and Intelligent Systems
 
-## Overview
-This exercise extends the differential-drive robot using ROS 2 Humble and Gazebo Harmonic. It includes additional sensors, custom ROS interfaces, and Python nodes for robot control.
+## 1. Overview
 
-## Packages
+This project implements a mobile robot simulation using ROS 2 Humble and Gazebo. It focuses on robot sensors, ROS 2 communication, custom interfaces, services, and actions.
 
-The exercise contains four ROS 2 packages:
+The main objective is to control a differential-drive robot, detect obstacles, and make the robot move in a square trajectory.
 
-- `diffdrive_bot` – robot description, Gazebo configuration, sensor setup, and launch files.
-- `lab_interfaces` – existing obstacle and drive-distance interfaces.
-- `my_robot_interfaces` – custom `RobotStatus` message, `SetTurnSpeed` service, and `Rotate` action.
-- `my_robot_nodes` – obstacle-avoidance, rotation-server, and square-driver nodes.
+## 2. Project Structure
 
-## Requirements
+The project contains the following packages:
 
-- Ubuntu 22.04
-- ROS 2 Humble
-- Gazebo Harmonic
-- `colcon`
+- **diffdrive_bot** – Contains the robot description, Gazebo simulation, sensors, and ROS-Gazebo bridges.
+- **lab_interfaces** – Contains custom interfaces for obstacle information and driving distance.
+- **my_robot_interfaces** – Contains custom messages, services, and actions.
+- **my_robot_nodes** – Contains Python nodes for robot control and movement.
 
-## Build
+## 3. Robot Sensors
 
-From the ROS 2 workspace:
+The simulated robot is equipped with the following sensors:
+
+- **LiDAR:** Detects nearby obstacles and provides distance information.
+- **Depth Camera:** Publishes depth images and point cloud data.
+- **IMU:** Measures acceleration and angular velocity.
+- **Odometry:** Provides information about the robot's movement and position.
+
+The sensor data is made available to ROS 2 through Gazebo-ROS bridges.
+
+### Sensor Visualization
+
+The following screenshot shows the robot's sensor visualization in RViz.
+
+![Depth Camera and Point Cloud](screenshots/depth_camera_pointcloud.png)
+
+## 4. Custom Interfaces
+
+The project uses custom ROS 2 interfaces to support communication between nodes.
+
+### Messages
+
+- `ObstacleInfo.msg` – Contains obstacle distance and angle information.
+- `RobotStatus.msg` – Reports the robot's current state and obstacle distance.
+
+### Services
+
+- `SetTurnSpeed.srv` – Allows the robot's turning speed to be changed.
+- `/turn_away_enable` – Enables or disables the obstacle-avoidance behavior.
+
+### Actions
+
+- `DriveDistance.action` – Controls how far the robot travels.
+- `Rotate.action` – Controls the robot's rotation.
+
+## 5. Implemented Nodes
+
+### 5.1 turn_away
+
+This node subscribes to obstacle information and publishes velocity commands and robot status.
+
+It also provides services to enable or disable obstacle avoidance and change the turning speed.
+
+### 5.2 rotate_server
+
+This action server handles robot rotation using odometry feedback. It receives rotation goals and reports the robot's progress.
+
+### 5.3 square_driver
+
+This action client communicates with the drive-distance and rotation action servers.
+
+It commands the robot to drive four sides, performing a 90-degree rotation after each side to complete a square trajectory.
+
+## 6. Build Instructions
+
+Source ROS 2 Humble and build the workspace:
 
 ```bash
-cd ~/ros2_ws
 source /opt/ros/humble/setup.bash
-colcon build
+cd ~/ros2_ws
+colcon build --symlink-install
 source install/setup.bash
 ```
 
-## Run
+## 7. Running the Simulation
 
-To launch the robot simulation and control environment:
-
-```bash
-ros2 launch diffdrive_bot control.launch.py
-```
-
-To run the obstacle-avoidance node in another terminal:
+First, start the robot simulation:
 
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/ros2_ws/install/setup.bash
-ros2 run my_robot_nodes turn_away
+ros2 launch diffdrive_bot control.launch.py
 ```
 
-The obstacle-avoidance node starts disabled. It can be enabled using the `/turn_away_enable` service.
-
-To launch the square-driving integration:
+Open another terminal and start the square-driving demonstration:
 
 ```bash
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
 ros2 launch my_robot_nodes square.launch.py
 ```
 
-## Implemented Features
+## 8. Testing and Results
 
-- Added a depth camera and IMU to the robot.
-- Configured Gazebo sensor plugins and ROS-Gazebo bridges.
-- Created custom ROS 2 message, service, and action interfaces.
-- Implemented an obstacle-avoidance node with configurable speeds.
-- Implemented a rotation action server with odometry feedback.
-- Implemented a square-driving client that sends drive and rotation goals.
+The following tests were performed:
 
-## Testing and Results
+- Verified that the depth camera publishes depth image data.
+- Verified that the IMU publishes sensor measurements.
+- Verified that obstacle information is published.
+- Tested the obstacle-avoidance enable service.
+- Tested the turning-speed service with valid and invalid values.
+- Tested the drive-distance action server.
+- Verified the robot's rotation behavior.
+- Tested the square-driving demonstration.
 
-- All four packages built successfully using `colcon build`.
-- Depth camera image and point-cloud topics were available in the simulation.
-- IMU messages were received.
-- The turn-away enable service and turn-speed service were tested.
-- The robot-status topic and forward velocity command were verified.
-- The square-driving launch started its nodes, but the first drive-distance goal was rejected. Therefore, successful completion of the square movement has not been verified.
+### Square Movement Result
 
-## Screenshots
+The square-driving demonstration completed successfully in Gazebo.
 
-### RViz – Depth Camera and Point Cloud
+Before starting, the square driver waited for the action servers and odometry data to become available. The robot then drove four sides and performed a 90-degree rotation after each side.
 
-![RViz depth camera and point cloud](screenshots/depth_camera_pointcloud.png)
+The terminal confirmed successful completion with the message:
 
+`Square movement completed!`
+
+## 9. Screenshots
+
+### 9.1 Depth Camera and Point Cloud
+
+![Depth Camera and Point Cloud](screenshots/depth_camera_pointcloud.png)
+
+### 9.2 Square Movement
+
+![Square Movement](screenshots/square_movement.png)
+
+## 10. Conclusion
+
+This lab provided practical experience with ROS 2 communication, custom messages, services, actions, robot sensors, and Gazebo simulation.
+
+The completed square-driving demonstration showed how multiple ROS 2 nodes and action servers can work together to control a simulated mobile robot.
