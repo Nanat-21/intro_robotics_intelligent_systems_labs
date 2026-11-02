@@ -1,5 +1,5 @@
-import asyncio
 import math
+import time
 
 import rclpy
 from rclpy.node import Node
@@ -68,7 +68,7 @@ class RotateServer(Node):
     def cancel_callback(self, goal_handle):
         return CancelResponse.ACCEPT
 
-    async def execute_callback(self, goal_handle):
+    def execute_callback(self, goal_handle):
         self.active = True
         self.total_yaw = 0.0
 
@@ -93,7 +93,7 @@ class RotateServer(Node):
                 feedback.turned = float(self.total_yaw)
                 goal_handle.publish_feedback(feedback)
 
-                await asyncio.sleep(0.05)
+                time.sleep(0.05)
 
             goal_handle.succeed()
 

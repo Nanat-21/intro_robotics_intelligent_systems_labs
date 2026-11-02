@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
+from nav_msgs.msg import Odometry
 
 from lab_interfaces.action import DriveDistance
 from my_robot_interfaces.action import Rotate
@@ -15,12 +16,22 @@ class SquareDriver(Node):
             self.get_parameter('side_length').value
         )
 
+        self.odom_ready = False
+
+        self.create_subscription(
+            Odometry, '/odom', self.odom_callback, 10
+        )
+
         self.drive_client = ActionClient(
             self, DriveDistance, '/drive_distance'
         )
+
         self.rotate_client = ActionClient(
             self, Rotate, '/rotate'
         )
+
+    def odom_callback(self, msg):
+        self.odom_ready = True
 
     def run_square(self):
         self.get_logger().info('Waiting for action servers...')
@@ -28,10 +39,15 @@ class SquareDriver(Node):
         self.drive_client.wait_for_server()
         self.rotate_client.wait_for_server()
 
+        self.get_logger().info('Waiting for odometry...')
+
+        while rclpy.ok() and not self.odom_ready:
+            rclpy.spin_once(self, timeout_sec=0.1)
+
+        self.get_logger().info('Odometry ready. Starting square!')
+
         for side in range(4):
-            self.get_logger().info(
-                f'Driving side {side + 1}/4'
-            )
+            self.get_logger().info(f'Driving side {side + 1}/4')
 
             drive_goal = DriveDistance.Goal()
             drive_goal.distance = self.side_length
@@ -40,6 +56,7 @@ class SquareDriver(Node):
             rclpy.spin_until_future_complete(self, future)
 
             drive_handle = future.result()
+
             if not drive_handle or not drive_handle.accepted:
                 self.get_logger().error('Drive goal rejected.')
                 return
@@ -62,6 +79,7 @@ class SquareDriver(Node):
             rclpy.spin_until_future_complete(self, future)
 
             rotate_handle = future.result()
+
             if not rotate_handle or not rotate_handle.accepted:
                 self.get_logger().error('Rotate goal rejected.')
                 return
